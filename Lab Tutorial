@@ -1,6 +1,9 @@
 
 CIS4560 Term Project Tutorial 
+
 Lab Tutorial 
+11/29/2017
+
 MLAB ANALYSIS USING HIVE AND GOOGLE BIGQUERY
 ________________________________________
 
@@ -13,8 +16,8 @@ List what your objectives are. In this hands-on lab, you will learn how to:
 •	Using excel maps and power view to visualize data
 
 
-Data Description
-The objective of this report will be to identify the fastest and slowest broadband connections as well as the performance issues in the last-mile network and end-systems that are most common among these broadband connections based on their network performance. During the course of bulk data transfers, NPAD gathers the performance regulating mechanisms and other detailed statistics for the NPAD server to collect test results along with other network transfer protocols (i.e. IP addresses, download/upload speeds, packet headers, and TCP variables).
+Data Analysis Objective
+To identify the number of NDT tests performed daily since M-Lab epoch by distinct users, as well as the number of distinct IP addresses that have run tests using both NDT and NPAD tools within the United States and across the globe. 
 
 Platform Specifications
 IBM Bluemix BigInsights
@@ -22,13 +25,13 @@ IBM Bluemix BigInsights
 Step 1: Create Cluster and Get Data
 Create an Apache Hadoop Cluster with IBM Bluemix.
 
-1. Launch IBM Bluemix. Go to “Data and Analytics” and then click on a tile “BigInsights for Apache Hadoop.” Select “Manage Cluster” and add a new cluster. 
- 
-2. Leave the default configuration and select Spark, Pig, Sqoop and Flume.
- 
+1. Launch IBM Bluemix. Go to “Data and Analytics” and then click on a tile “BigInsights for Apache Hadoop.” Select “Manage Cluster” and add a new cluster.
+
+2. Leave the default configuration and select Spark, Pig, Sqoop and Flume. 
+
 3. Copy the ssh host address and use Putty to connect to your cluster
- 
-4. Enter your username and password
+
+4. Enter your username and password 
 
 5. Use the following command to get the data:
 -bash-4.1$ wget -r https://storage.googleapis.com/m-lab/experimental-hive-csv/2015-01-01.csv.gz
@@ -104,7 +107,7 @@ $hive describe mlab;
  
 16. To ensure the data was transferred. Run this query to show 3 records of the table:
 $hive select * from mlab limit 3;
-
+ 
 17. Count all records from the table:
 SELECT COUNT(*) FROM mlab;
 
@@ -137,7 +140,9 @@ WHERE connection_spec_client_os IS NOT NULL
 LIMIT 10;
 
 Step 2: Alternatively Use Google BigQuery
-Alternatively to hive, you can use Google’s BigQuery. To use Google BigQuery, follow these steps:
+Alternatively to hive, you can use Google’s BigQuery to process the data at a faster rate, while making it easier to read. 
+To use Google BigQuery, follow these steps:
+
 Step 1. Configure Google Cloud Platform Console Project
 Create a project, and enable billing in Google Cloud Platform Console (or use an existing project with billing enabled).
 
@@ -153,15 +158,15 @@ COUNT(*) AS num_tests
 FROM plx.google:m_lab.ndt.all
 GROUP BY day
 ORDER BY day ASC;
-
+ 
 5. Try the following query to pull three the records from the mlab table:
 SELECT * FROM plx.google:m_lab.ndt.all LIMIT 3;
-
+ 
 6. Try the following query to calculate how many distinct users (distinct IPs, for simplicity) have ever run an NDT test.
 SELECT COUNT(DISTINCT web100_log_entry.connection_spec.remote_ip) AS num_clients
 FROM plx.google:m_lab.ndt.all
 WHERE web100_log_entry.connection_spec.remote_ip IS NOT NULL;
-
+ 
 7. Try the following query to compute how the number of users changed over time.
 SELECT STRFTIME_UTC_USEC(web100_log_entry.log_time * INTEGER(POW(10, 6)), '%Y-%m-%d') AS day,
 COUNT(DISTINCT web100_log_entry.connection_spec.remote_ip) AS num_clients
@@ -169,12 +174,11 @@ FROM plx.google:m_lab.ndt.all
 WHERE web100_log_entry.connection_spec.remote_ip IS NOT NULL
 GROUP BY day
 ORDER BY day ASC;
-
+ 
 8. Try the following query to aggregate the client IP addresses into /24s and counts the number of unique /24s that have ever initiated at least one NDT test.
-
 SELECT COUNT(DISTINCT FORMAT_IP(PARSE_IP(web100_log_entry.connection_spec.remote_ip) & INTEGER(POW(2, 32) - POW(2, 32 - 24)))) AS num_subnets
-FROM plx.google:m_lab.ndt.all
-
+FROM plx.google:m_lab.ndt.all;
+ 
 9. This query computes the number of distinct IP addresses that have run tests using both NDT and NPAD
 SELECT COUNT(*) AS num_ip_addresses
 FROM (
@@ -182,25 +186,25 @@ SELECT npad.web100_log_entry.connection_spec.remote_ip,
 FROM plx.google:m_lab.npad.all AS npad
 JOIN plx.google:m_lab.npad.all AS ndt
 ON (npad.web100_log_entry.connection_spec.remote_ip = ndt.web100_log_entry.connection_spec.remote_ip)
-GROUP BY npad.web100_log_entry.connection_spec.remote_ip)
-
-10. Show 10 records where the client OS is not null:
+GROUP BY npad.web100_log_entry.connection_spec.remote_ip);
+ 
+10. Count the records where the client OS is not null:
 SELECT COUNT(*)
 FROM plx.google:m_lab.ndt.all
 WHERE connection_spec.client_os IS NOT NULL;
-
+ 
 11. Show 100 records where the client OS is ‘Windows’:
 SELECT *
 FROM plx.google:m_lab.ndt.all
 WHERE connection_spec.client_os = 'Windows'
 LIMIT 100;
-
+ 
 12. Show 100 records where the country is not null:
 SELECT *
 FROM plx.google:m_lab.ndt.all
 WHERE connection_spec.client_geolocation.country_name IS NOT NULL
 LIMIT 100;
-
+ 
 13. Show 100 records where the country is ‘United States’:
 SELECT *
 FROM plx.google:m_lab.ndt.all
@@ -211,20 +215,30 @@ Step 3: Visualization
 Use Excel features to visualize your data.
 1. You can download the data directly from Google BigQuery by selecting “Download a CSV”
 The data extracted will be 100 records where the country equals “United States”
-
+ 
 2. Open Excel and get the data from CSV
 
 3. Open 3D Maps in Excel
  
-4. Select the connection by City to display results on the map
-
+4. Select the connection by City under location to display results on the map. Add connection_spec_client_geolocation_city under Category. 
+ 
+Moreover, you can run a query to visualize the number of testings performed on specific days using Tableau: 
+1. Open Tableau and get the data from text file. Select the CSV file you downloaded from Google BigQuery.
+ 
+2. Go to a new Worksheet. Drag the sum of tests to Columns and Year to Rows.
+ 
 Additionally, you can download more data from Google BigQuery. In this case, the data extracted will be 100 records where the country is not null:
  
 1. Open excel and load the CSV data. Then, open Power View under the insert tab.
-
-2. Drag the Client_geolocation_country to the LOCATIONS filter. You will be able to visualize the countries on the map.
-
+ 
+2. Drag the Client_geolocation_country to the LOCATIONS filter. You will be able to visualize the countries on the map. Drag the Client_geolocation_country to Size, drag the Log Time Color. Please note that the log time is in epoch time. You can use this converter to translate it to your time zone. 
+ 
 References
 1. Full data source:  https://console.cloud.google.com/storage/browser/m-lab/experimental-hive-csv?pli=1
-2. References: https://aws.amazon.com/datasets/m-lab-dataset-network-path-and-application-diagnosis-tool-npad/?_encoding=UTF8&jiveRedirect=1
-https://www.measurementlab.net/data/docs/bq/quickstart/
+2. Ambari URL: ***
+3. Github URL: https://github.com/jcanizalez8/CIS-4560/blob/master/Lab%20Tutorial
+4. npad Github URL: https://github.com/npad/npad
+5. References: 
+a) https://aws.amazon.com/datasets/m-lab-dataset-network-path-and-application-diagnosis-tool-npad/?_encoding=UTF8&jiveRedirect=1
+b) https://www.measurementlab.net/data/docs/bq/quickstart/
+
