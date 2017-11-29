@@ -224,8 +224,6 @@ Additionally, you can download more data from Google BigQuery. In this case, the
 
 2. Drag the Client_geolocation_country to the LOCATIONS filter. You will be able to visualize the countries on the map.
 
-3.	To visualize location type of results on map, convert csv file to excel and click on map button under insert tab. 
-
 References
 1. Full data source:  https://console.cloud.google.com/storage/browser/m-lab/experimental-hive-csv?pli=1
 2. References: https://aws.amazon.com/datasets/m-lab-dataset-network-path-and-application-diagnosis-tool-npad/?_encoding=UTF8&jiveRedirect=1
